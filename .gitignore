@@ -80,8 +80,9 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 .output
+# NOTE: dist/ is NOT ignored — consumers install this package via GitHub URL,
+# so the built artifacts must be committed.
 
 # Gatsby files
 .cache/

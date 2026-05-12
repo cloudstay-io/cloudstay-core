@@ -1,0 +1,135 @@
+type Listing = {
+    _id: string;
+    id: string;
+    externalId: string;
+    slug: string;
+    name: string;
+    internalName?: string;
+    description?: string;
+    shortDescription?: string;
+    listingType: string;
+    status: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    displayAddress?: string;
+    latitude?: number;
+    longitude?: number;
+    bedrooms?: number;
+    bathrooms?: number;
+    maxGuests?: number;
+    basePrice?: number;
+    cleaningFee?: number;
+    currency?: string;
+    minMaxPriceRange?: {
+        min?: number;
+        max?: number;
+    };
+    rating?: number;
+    reviewCount?: number;
+    coverPhotoUrl?: string | null;
+    thumbnailUrl?: string;
+    images?: Array<{
+        url: string;
+        caption?: string;
+        roomCategory?: string;
+    }>;
+    galleryThumbnails?: string[];
+    amenities?: string[];
+    tags?: string[];
+    featured?: boolean;
+};
+type ListingsResponse = {
+    listings: Listing[];
+    pagination?: {
+        page: number;
+        limit: number;
+        total?: number;
+    };
+    hiddenListingIds?: string[];
+};
+type AvailabilityIdsResponse = {
+    availableIds: string[];
+    total: number;
+};
+type Quote = {
+    listingId: string;
+    checkIn: string;
+    checkOut: string;
+    numberOfNights: number;
+    guests: number;
+    nightlyRate: number;
+    subtotal: number;
+    cleaningFee: number;
+    serviceFee: number;
+    taxes: number;
+    totalAmount: number;
+    currency: string;
+    available: boolean;
+    quoteSource: string;
+};
+type AddOn = {
+    name: string;
+    description?: string;
+    price: number;
+    priceType: "FLAT" | "PER_NIGHT" | "PER_GUEST" | "PER_PET";
+    currency: string;
+    maxQuantity?: number;
+    isRequired?: boolean;
+    isActive?: boolean;
+};
+type SearchParams = {
+    page?: number;
+    limit?: number;
+    checkIn?: string;
+    checkOut?: string;
+    listingId?: string;
+};
+type CloudStayClientConfig = {
+    apiKey: string;
+    baseUrl?: string;
+    fetch?: typeof fetch;
+};
+type FetchOpts = {
+    cache?: RequestCache;
+    revalidate?: number | false;
+    signal?: AbortSignal;
+};
+
+declare class CloudStayClient {
+    readonly apiKey: string;
+    readonly baseUrl: string;
+    readonly fetchImpl: typeof fetch;
+    constructor(config: CloudStayClientConfig);
+    private authedFetch;
+    private publicFetch;
+    listListings(params?: SearchParams, opts?: FetchOpts): Promise<ListingsResponse>;
+    getListingById(listingId: string, opts?: FetchOpts): Promise<Listing | null>;
+    getListingBySlug(slug: string, opts?: FetchOpts): Promise<Listing | null>;
+    getAvailableListingIds(startDate: string, endDate: string, opts?: FetchOpts): Promise<AvailabilityIdsResponse>;
+    quoteListing(listingId: string, body: {
+        checkIn: string;
+        checkOut: string;
+        guests?: number;
+        adults?: number;
+        children?: number;
+        infants?: number;
+        pets?: number;
+        promoCode?: string;
+    }): Promise<{
+        quote: Quote;
+    }>;
+    getListingAddons(listingId: string, opts?: FetchOpts): Promise<{
+        listingId: string;
+        addOns: AddOn[];
+    }>;
+    searchListings(params?: {
+        checkIn?: string;
+        checkOut?: string;
+        guests?: number;
+        limit?: number;
+    }, opts?: FetchOpts): Promise<ListingsResponse>;
+}
+declare function createCloudStayClient(config: CloudStayClientConfig): CloudStayClient;
+
+export { type AddOn, type AvailabilityIdsResponse, CloudStayClient, type CloudStayClientConfig, type FetchOpts, type Listing, type ListingsResponse, type Quote, type SearchParams, createCloudStayClient };
