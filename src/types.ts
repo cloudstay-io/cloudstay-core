@@ -86,6 +86,30 @@ export type SearchParams = {
   listingId?: string;
 };
 
+export type SortBy =
+  | "featured"
+  | "price-asc"
+  | "price-desc"
+  | "guests"
+  | "rating";
+
+export type SearchFilters = {
+  location?: string;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: number;
+  sortBy?: SortBy;
+  limit?: number;
+};
+
+export type CityOption = {
+  city: string;
+  state?: string;
+  country?: string;
+  label: string;
+  count: number;
+};
+
 export type CloudStayClientConfig = {
   apiKey: string;
   baseUrl?: string;

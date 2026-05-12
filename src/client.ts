@@ -1,12 +1,15 @@
 import type {
   AddOn,
   AvailabilityIdsResponse,
+  CityOption,
   CloudStayClientConfig,
   FetchOpts,
   Listing,
   ListingsResponse,
   Quote,
+  SearchFilters,
   SearchParams,
+  SortBy,
 } from "./types";
 
 const DEFAULT_BASE = "https://cloudstay.io";
@@ -132,28 +135,102 @@ export class CloudStayClient {
     return this.publicFetch(`/api/listings/${listingId}/addons`, opts);
   }
 
+  /**
+   * Returns sorted unique cities (with state/country context) across all
+   * listings on this account — used for the destination dropdown.
+   */
+  async getCities(opts: FetchOpts = { revalidate: 1800 }): Promise<CityOption[]> {
+    const { listings } = await this.listListings({ limit: 500 }, opts);
+    const seen = new Map<string, CityOption>();
+    for (const l of listings) {
+      if (!l.city) continue;
+      const key = [l.city, l.state, l.country].filter(Boolean).join("|").toLowerCase();
+      if (!seen.has(key)) {
+        seen.set(key, {
+          city: l.city,
+          state: l.state,
+          country: l.country,
+          label: [l.city, l.state, l.country].filter(Boolean).join(", "),
+          count: 1,
+        });
+      } else {
+        seen.get(key)!.count += 1;
+      }
+    }
+    return [...seen.values()].sort((a, b) => a.label.localeCompare(b.label));
+  }
+
   async searchListings(
-    params: { checkIn?: string; checkOut?: string; guests?: number; limit?: number } = {},
+    params: SearchFilters = {},
     opts: FetchOpts = { revalidate: 60 },
   ): Promise<ListingsResponse> {
+    const limit = params.limit ?? 100;
+    let listings: Listing[];
+    let pagination: ListingsResponse["pagination"];
+
     if (params.checkIn && params.checkOut) {
       const ids = await this.getAvailableListingIds(params.checkIn, params.checkOut, opts);
       if (ids.availableIds.length === 0) {
         return { listings: [], pagination: { page: 1, limit: 0, total: 0 } };
       }
-      const all = await this.listListings({ limit: params.limit ?? 100 }, opts);
+      const all = await this.listListings({ limit }, opts);
       const allowed = new Set(ids.availableIds);
-      const filtered = all.listings.filter((l) => allowed.has(l._id) || allowed.has(l.id));
-      if (params.guests) {
-        const guestsRequired = params.guests;
-        return {
-          ...all,
-          listings: filtered.filter((l) => (l.maxGuests ?? Infinity) >= guestsRequired),
-        };
-      }
-      return { ...all, listings: filtered };
+      listings = all.listings.filter((l) => allowed.has(l._id) || allowed.has(l.id));
+      pagination = all.pagination;
+    } else {
+      const all = await this.listListings({ limit }, opts);
+      listings = all.listings;
+      pagination = all.pagination;
     }
-    return this.listListings({ limit: params.limit ?? 100 }, opts);
+
+    if (params.guests) {
+      const min = params.guests;
+      listings = listings.filter((l) => (l.maxGuests ?? Infinity) >= min);
+    }
+
+    if (params.location) {
+      const q = params.location.trim().toLowerCase();
+      if (q) {
+        listings = listings.filter((l) => {
+          const haystack = [
+            l.name,
+            l.city,
+            l.state,
+            l.country,
+            l.displayAddress,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(q);
+        });
+      }
+    }
+
+    listings = sortListings(listings, params.sortBy ?? "featured");
+
+    return { listings, pagination };
+  }
+}
+
+function sortListings(listings: Listing[], sortBy: SortBy): Listing[] {
+  const copy = [...listings];
+  switch (sortBy) {
+    case "price-asc":
+      return copy.sort(
+        (a, b) => (a.basePrice ?? Infinity) - (b.basePrice ?? Infinity),
+      );
+    case "price-desc":
+      return copy.sort(
+        (a, b) => (b.basePrice ?? -Infinity) - (a.basePrice ?? -Infinity),
+      );
+    case "guests":
+      return copy.sort((a, b) => (b.maxGuests ?? 0) - (a.maxGuests ?? 0));
+    case "rating":
+      return copy.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+    case "featured":
+    default:
+      return copy.sort((a, b) => Number(b.featured ?? 0) - Number(a.featured ?? 0));
   }
 }
 

@@ -85,6 +85,22 @@ type SearchParams = {
     checkOut?: string;
     listingId?: string;
 };
+type SortBy = "featured" | "price-asc" | "price-desc" | "guests" | "rating";
+type SearchFilters = {
+    location?: string;
+    checkIn?: string;
+    checkOut?: string;
+    guests?: number;
+    sortBy?: SortBy;
+    limit?: number;
+};
+type CityOption = {
+    city: string;
+    state?: string;
+    country?: string;
+    label: string;
+    count: number;
+};
 type CloudStayClientConfig = {
     apiKey: string;
     baseUrl?: string;
@@ -123,13 +139,13 @@ declare class CloudStayClient {
         listingId: string;
         addOns: AddOn[];
     }>;
-    searchListings(params?: {
-        checkIn?: string;
-        checkOut?: string;
-        guests?: number;
-        limit?: number;
-    }, opts?: FetchOpts): Promise<ListingsResponse>;
+    /**
+     * Returns sorted unique cities (with state/country context) across all
+     * listings on this account — used for the destination dropdown.
+     */
+    getCities(opts?: FetchOpts): Promise<CityOption[]>;
+    searchListings(params?: SearchFilters, opts?: FetchOpts): Promise<ListingsResponse>;
 }
 declare function createCloudStayClient(config: CloudStayClientConfig): CloudStayClient;
 
-export { type AddOn, type AvailabilityIdsResponse, CloudStayClient, type CloudStayClientConfig, type FetchOpts, type Listing, type ListingsResponse, type Quote, type SearchParams, createCloudStayClient };
+export { type AddOn, type AvailabilityIdsResponse, type CityOption, CloudStayClient, type CloudStayClientConfig, type FetchOpts, type Listing, type ListingsResponse, type Quote, type SearchFilters, type SearchParams, type SortBy, createCloudStayClient };
