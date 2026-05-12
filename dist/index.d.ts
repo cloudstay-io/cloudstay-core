@@ -105,6 +105,13 @@ type CloudStayClientConfig = {
     apiKey: string;
     baseUrl?: string;
     fetch?: typeof fetch;
+    /**
+     * If true, listing reads hit `/api/external/listings/all` instead of
+     * `/api/external/listings` — bypasses the per-account `hiddenListingIds`
+     * filter so an account-owner api-key sees every listing on its account.
+     * Default: false (backward-compatible).
+     */
+    useOwnerEndpoint?: boolean;
 };
 type FetchOpts = {
     cache?: RequestCache;
@@ -116,7 +123,9 @@ declare class CloudStayClient {
     readonly apiKey: string;
     readonly baseUrl: string;
     readonly fetchImpl: typeof fetch;
+    readonly useOwnerEndpoint: boolean;
     constructor(config: CloudStayClientConfig);
+    private listingsPath;
     private authedFetch;
     private publicFetch;
     listListings(params?: SearchParams, opts?: FetchOpts): Promise<ListingsResponse>;

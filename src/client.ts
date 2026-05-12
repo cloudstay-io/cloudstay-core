@@ -18,6 +18,7 @@ export class CloudStayClient {
   readonly apiKey: string;
   readonly baseUrl: string;
   readonly fetchImpl: typeof fetch;
+  readonly useOwnerEndpoint: boolean;
 
   constructor(config: CloudStayClientConfig) {
     if (!config.apiKey) {
@@ -26,6 +27,13 @@ export class CloudStayClient {
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? DEFAULT_BASE;
     this.fetchImpl = config.fetch ?? fetch;
+    this.useOwnerEndpoint = config.useOwnerEndpoint ?? false;
+  }
+
+  private listingsPath(): string {
+    return this.useOwnerEndpoint
+      ? "/api/external/listings/all"
+      : "/api/external/listings";
   }
 
   private async authedFetch<T>(path: string, init: RequestInit & FetchOpts = {}): Promise<T> {
@@ -80,7 +88,7 @@ export class CloudStayClient {
     if (params.checkOut) query.set("checkOut", params.checkOut);
     if (params.listingId) query.set("listingId", params.listingId);
     const qs = query.toString();
-    return this.authedFetch(`/api/external/listings${qs ? `?${qs}` : ""}`, opts);
+    return this.authedFetch(`${this.listingsPath()}${qs ? `?${qs}` : ""}`, opts);
   }
 
   async getListingById(

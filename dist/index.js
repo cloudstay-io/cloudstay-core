@@ -4,6 +4,7 @@ var CloudStayClient = class {
   apiKey;
   baseUrl;
   fetchImpl;
+  useOwnerEndpoint;
   constructor(config) {
     if (!config.apiKey) {
       throw new Error("CloudStayClient: apiKey is required.");
@@ -11,6 +12,10 @@ var CloudStayClient = class {
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? DEFAULT_BASE;
     this.fetchImpl = config.fetch ?? fetch;
+    this.useOwnerEndpoint = config.useOwnerEndpoint ?? false;
+  }
+  listingsPath() {
+    return this.useOwnerEndpoint ? "/api/external/listings/all" : "/api/external/listings";
   }
   async authedFetch(path, init = {}) {
     const { revalidate, ...rest } = init;
@@ -59,7 +64,7 @@ var CloudStayClient = class {
     if (params.checkOut) query.set("checkOut", params.checkOut);
     if (params.listingId) query.set("listingId", params.listingId);
     const qs = query.toString();
-    return this.authedFetch(`/api/external/listings${qs ? `?${qs}` : ""}`, opts);
+    return this.authedFetch(`${this.listingsPath()}${qs ? `?${qs}` : ""}`, opts);
   }
   async getListingById(listingId, opts = { revalidate: 300 }) {
     const res = await this.listListings({ listingId, limit: 1 }, opts);

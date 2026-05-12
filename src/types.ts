@@ -114,6 +114,13 @@ export type CloudStayClientConfig = {
   apiKey: string;
   baseUrl?: string;
   fetch?: typeof fetch;
+  /**
+   * If true, listing reads hit `/api/external/listings/all` instead of
+   * `/api/external/listings` — bypasses the per-account `hiddenListingIds`
+   * filter so an account-owner api-key sees every listing on its account.
+   * Default: false (backward-compatible).
+   */
+  useOwnerEndpoint?: boolean;
 };
 
 export type FetchOpts = {
