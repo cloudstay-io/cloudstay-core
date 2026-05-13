@@ -35,7 +35,10 @@ type Listing = {
         roomCategory?: string;
     }>;
     galleryThumbnails?: string[];
-    amenities?: string[];
+    amenities?: Array<{
+        category?: string;
+        name: string;
+    }>;
     tags?: string[];
     featured?: boolean;
 };

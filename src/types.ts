@@ -34,7 +34,7 @@ export type Listing = {
   images?: Array<{ url: string; caption?: string; roomCategory?: string }>;
   galleryThumbnails?: string[];
 
-  amenities?: string[];
+  amenities?: Array<{ category?: string; name: string }>;
   tags?: string[];
   featured?: boolean;
 };

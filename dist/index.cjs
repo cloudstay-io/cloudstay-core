@@ -115,7 +115,8 @@ var CloudStayClient = class {
     return [...seen.values()].sort((a, b) => a.label.localeCompare(b.label));
   }
   async searchListings(params = {}, opts = { revalidate: 60 }) {
-    const limit = params.limit ?? 100;
+    const displayLimit = params.limit ?? 100;
+    const FETCH_LIMIT = 500;
     let listings;
     let pagination;
     if (params.checkIn && params.checkOut) {
@@ -123,12 +124,12 @@ var CloudStayClient = class {
       if (ids.availableIds.length === 0) {
         return { listings: [], pagination: { page: 1, limit: 0, total: 0 } };
       }
-      const all = await this.listListings({ limit }, opts);
+      const all = await this.listListings({ limit: FETCH_LIMIT }, opts);
       const allowed = new Set(ids.availableIds);
       listings = all.listings.filter((l) => allowed.has(l._id) || allowed.has(l.id));
       pagination = all.pagination;
     } else {
-      const all = await this.listListings({ limit }, opts);
+      const all = await this.listListings({ limit: FETCH_LIMIT }, opts);
       listings = all.listings;
       pagination = all.pagination;
     }
@@ -152,7 +153,7 @@ var CloudStayClient = class {
       }
     }
     listings = sortListings(listings, params.sortBy ?? "featured");
-    return { listings, pagination };
+    return { listings: listings.slice(0, displayLimit), pagination };
   }
 };
 function sortListings(listings, sortBy) {

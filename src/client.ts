@@ -172,7 +172,11 @@ export class CloudStayClient {
     params: SearchFilters = {},
     opts: FetchOpts = { revalidate: 60 },
   ): Promise<ListingsResponse> {
-    const limit = params.limit ?? 100;
+    const displayLimit = params.limit ?? 100;
+    // Always fetch the same fixed page (500) so this call dedupes with
+    // `getCities()` via Next.js's fetch cache — one network round-trip
+    // serves both. We slice down to `displayLimit` after filtering.
+    const FETCH_LIMIT = 500;
     let listings: Listing[];
     let pagination: ListingsResponse["pagination"];
 
@@ -181,12 +185,12 @@ export class CloudStayClient {
       if (ids.availableIds.length === 0) {
         return { listings: [], pagination: { page: 1, limit: 0, total: 0 } };
       }
-      const all = await this.listListings({ limit }, opts);
+      const all = await this.listListings({ limit: FETCH_LIMIT }, opts);
       const allowed = new Set(ids.availableIds);
       listings = all.listings.filter((l) => allowed.has(l._id) || allowed.has(l.id));
       pagination = all.pagination;
     } else {
-      const all = await this.listListings({ limit }, opts);
+      const all = await this.listListings({ limit: FETCH_LIMIT }, opts);
       listings = all.listings;
       pagination = all.pagination;
     }
@@ -217,7 +221,8 @@ export class CloudStayClient {
 
     listings = sortListings(listings, params.sortBy ?? "featured");
 
-    return { listings, pagination };
+    // Truncate to the caller's requested page size (after filtering & sorting).
+    return { listings: listings.slice(0, displayLimit), pagination };
   }
 }
 
