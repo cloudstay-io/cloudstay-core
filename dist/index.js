@@ -60,7 +60,7 @@ var CloudStayClient = class {
    * full payload is projected client-side. Either way, callers see
    * `ListingSummary[]`.
    */
-  async listListings(params = {}, opts = { revalidate: 300 }) {
+  async listListings(params = {}, opts = { revalidate: 3600 }) {
     const qs = buildQuery(params);
     if (this.useOwnerEndpoint) {
       return this.authedFetch(
@@ -84,7 +84,7 @@ var CloudStayClient = class {
    * `useOwnerEndpoint` is on, this still passes `?includeHidden=true` so the
    * owner can view their hidden listings' detail pages.
    */
-  async listListingsFull(params = {}, opts = { revalidate: 300 }) {
+  async listListingsFull(params = {}, opts = { revalidate: 3600 }) {
     const qs = buildQuery(
       this.useOwnerEndpoint ? { ...params, includeHidden: true } : params
     );
@@ -93,11 +93,11 @@ var CloudStayClient = class {
       opts
     );
   }
-  async getListingById(listingId, opts = { revalidate: 300 }) {
+  async getListingById(listingId, opts = { revalidate: 3600 }) {
     const res = await this.listListingsFull({ listingId, limit: 1 }, opts);
     return res.listings[0] ?? null;
   }
-  async getListingBySlug(slug, opts = { revalidate: 300 }) {
+  async getListingBySlug(slug, opts = { revalidate: 3600 }) {
     const all = await this.listListingsFull({ limit: 500 }, opts);
     return all.listings.find((l) => l.slug === slug) ?? null;
   }
@@ -112,7 +112,7 @@ var CloudStayClient = class {
       cache: "no-store"
     });
   }
-  async getListingAddons(listingId, opts = { revalidate: 300 }) {
+  async getListingAddons(listingId, opts = { revalidate: 3600 }) {
     return this.publicFetch(`/api/listings/${listingId}/addons`, opts);
   }
   /**
@@ -140,7 +140,7 @@ var CloudStayClient = class {
     }
     return [...seen.values()].sort((a, b) => a.label.localeCompare(b.label));
   }
-  async searchListings(params = {}, opts = { revalidate: 60 }) {
+  async searchListings(params = {}, opts = { revalidate: 3600 }) {
     const displayLimit = params.limit ?? 100;
     const FETCH_LIMIT = 500;
     let listings;

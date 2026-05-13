@@ -82,7 +82,7 @@ export class CloudStayClient {
    */
   async listListings(
     params: SearchParams = {},
-    opts: FetchOpts = { revalidate: 300 },
+    opts: FetchOpts = { revalidate: 3600 },
   ): Promise<ListingSummariesResponse> {
     const qs = buildQuery(params);
 
@@ -112,7 +112,7 @@ export class CloudStayClient {
    */
   async listListingsFull(
     params: SearchParams = {},
-    opts: FetchOpts = { revalidate: 300 },
+    opts: FetchOpts = { revalidate: 3600 },
   ): Promise<ListingsResponse> {
     const qs = buildQuery(
       this.useOwnerEndpoint ? { ...params, includeHidden: true } : params,
@@ -125,7 +125,7 @@ export class CloudStayClient {
 
   async getListingById(
     listingId: string,
-    opts: FetchOpts = { revalidate: 300 },
+    opts: FetchOpts = { revalidate: 3600 },
   ): Promise<Listing | null> {
     const res = await this.listListingsFull({ listingId, limit: 1 }, opts);
     return res.listings[0] ?? null;
@@ -133,7 +133,7 @@ export class CloudStayClient {
 
   async getListingBySlug(
     slug: string,
-    opts: FetchOpts = { revalidate: 300 },
+    opts: FetchOpts = { revalidate: 3600 },
   ): Promise<Listing | null> {
     const all = await this.listListingsFull({ limit: 500 }, opts);
     return all.listings.find((l) => l.slug === slug) ?? null;
@@ -170,7 +170,7 @@ export class CloudStayClient {
 
   async getListingAddons(
     listingId: string,
-    opts: FetchOpts = { revalidate: 300 },
+    opts: FetchOpts = { revalidate: 3600 },
   ): Promise<{ listingId: string; addOns: AddOn[] }> {
     return this.publicFetch(`/api/listings/${listingId}/addons`, opts);
   }
@@ -203,7 +203,7 @@ export class CloudStayClient {
 
   async searchListings(
     params: SearchFilters = {},
-    opts: FetchOpts = { revalidate: 60 },
+    opts: FetchOpts = { revalidate: 3600 },
   ): Promise<ListingSummariesResponse> {
     const displayLimit = params.limit ?? 100;
     // Always fetch the same fixed page (500) so this call dedupes with
