@@ -51,6 +51,44 @@ type ListingsResponse = {
     };
     hiddenListingIds?: string[];
 };
+/**
+ * Slim card-shape listing — only the fields a search/grid card or map pin
+ * renders. Returned by the owner endpoint `/api/external/listings/all` and by
+ * the client's `listListings` / `searchListings` (which projects from `Listing`
+ * when the legacy endpoint is in use). Keep this tight: every field added
+ * widens the search-page payload across every fork.
+ */
+type ListingSummary = {
+    _id: string;
+    id: string;
+    slug: string;
+    name: string;
+    coverPhotoUrl?: string | null;
+    thumbnailUrl?: string;
+    galleryThumbnail?: string | null;
+    basePrice?: number;
+    currency?: string;
+    bedrooms?: number;
+    bathrooms?: number;
+    maxGuests?: number;
+    displayAddress?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
+    /** Needed for the "Sort by rating" option, otherwise unused on the card. */
+    rating?: number;
+    featured?: boolean;
+};
+type ListingSummariesResponse = {
+    listings: ListingSummary[];
+    pagination?: {
+        page: number;
+        limit: number;
+        total?: number;
+    };
+};
 type AvailabilityIdsResponse = {
     availableIds: string[];
     total: number;
@@ -128,10 +166,24 @@ declare class CloudStayClient {
     readonly fetchImpl: typeof fetch;
     readonly useOwnerEndpoint: boolean;
     constructor(config: CloudStayClientConfig);
-    private listingsPath;
     private authedFetch;
     private publicFetch;
-    listListings(params?: SearchParams, opts?: FetchOpts): Promise<ListingsResponse>;
+    /**
+     * Returns slim card-shape listings — the form used by search grids and map
+     * pins. When the owner endpoint is enabled, the API returns this shape
+     * directly (`/api/external/listings/all`); otherwise the parent endpoint's
+     * full payload is projected client-side. Either way, callers see
+     * `ListingSummary[]`.
+     */
+    listListings(params?: SearchParams, opts?: FetchOpts): Promise<ListingSummariesResponse>;
+    /**
+     * Returns the full `Listing` payload — used by listing-detail pages that
+     * render description, amenities, full gallery, etc. Always hits the parent
+     * endpoint (the owner /all endpoint deliberately drops these fields). When
+     * `useOwnerEndpoint` is on, this still passes `?includeHidden=true` so the
+     * owner can view their hidden listings' detail pages.
+     */
+    listListingsFull(params?: SearchParams, opts?: FetchOpts): Promise<ListingsResponse>;
     getListingById(listingId: string, opts?: FetchOpts): Promise<Listing | null>;
     getListingBySlug(slug: string, opts?: FetchOpts): Promise<Listing | null>;
     getAvailableListingIds(startDate: string, endDate: string, opts?: FetchOpts): Promise<AvailabilityIdsResponse>;
@@ -153,11 +205,12 @@ declare class CloudStayClient {
     }>;
     /**
      * Returns sorted unique cities (with state/country context) across all
-     * listings on this account — used for the destination dropdown.
+     * listings on this account — used for the destination dropdown. Reuses the
+     * slim payload so this dedupes with `searchListings` via Next's fetch cache.
      */
     getCities(opts?: FetchOpts): Promise<CityOption[]>;
-    searchListings(params?: SearchFilters, opts?: FetchOpts): Promise<ListingsResponse>;
+    searchListings(params?: SearchFilters, opts?: FetchOpts): Promise<ListingSummariesResponse>;
 }
 declare function createCloudStayClient(config: CloudStayClientConfig): CloudStayClient;
 
-export { type AddOn, type AvailabilityIdsResponse, type CityOption, CloudStayClient, type CloudStayClientConfig, type FetchOpts, type Listing, type ListingsResponse, type Quote, type SearchFilters, type SearchParams, type SortBy, createCloudStayClient };
+export { type AddOn, type AvailabilityIdsResponse, type CityOption, CloudStayClient, type CloudStayClientConfig, type FetchOpts, type Listing, type ListingSummariesResponse, type ListingSummary, type ListingsResponse, type Quote, type SearchFilters, type SearchParams, type SortBy, createCloudStayClient };

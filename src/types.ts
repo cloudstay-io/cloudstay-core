@@ -45,6 +45,47 @@ export type ListingsResponse = {
   hiddenListingIds?: string[];
 };
 
+/**
+ * Slim card-shape listing — only the fields a search/grid card or map pin
+ * renders. Returned by the owner endpoint `/api/external/listings/all` and by
+ * the client's `listListings` / `searchListings` (which projects from `Listing`
+ * when the legacy endpoint is in use). Keep this tight: every field added
+ * widens the search-page payload across every fork.
+ */
+export type ListingSummary = {
+  _id: string;
+  id: string;
+  slug: string;
+  name: string;
+
+  coverPhotoUrl?: string | null;
+  thumbnailUrl?: string;
+  galleryThumbnail?: string | null;
+
+  basePrice?: number;
+  currency?: string;
+
+  bedrooms?: number;
+  bathrooms?: number;
+  maxGuests?: number;
+
+  displayAddress?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
+
+  /** Needed for the "Sort by rating" option, otherwise unused on the card. */
+  rating?: number;
+  featured?: boolean;
+};
+
+export type ListingSummariesResponse = {
+  listings: ListingSummary[];
+  pagination?: { page: number; limit: number; total?: number };
+};
+
 export type AvailabilityIdsResponse = {
   availableIds: string[];
   total: number;
