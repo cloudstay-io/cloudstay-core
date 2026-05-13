@@ -91,6 +91,28 @@ export type AvailabilityIdsResponse = {
   total: number;
 };
 
+/**
+ * Per-day availability state for a single listing — used by the booking
+ * calendar to disable dates that are already booked or owner-blocked.
+ */
+export type AvailabilityDay = {
+  status: string;
+  price: number | null;
+  minNights: number;
+  maxNights: number | null;
+  isBlocked: boolean;
+  isBooked: boolean;
+  closedToArrival: boolean;
+  closedToDeparture: boolean;
+};
+
+export type ListingAvailabilityResponse = {
+  /** Keyed by date string in YYYY-MM-DD format. */
+  availability: Record<string, AvailabilityDay>;
+  source: "channel" | "connection";
+  dateRange: { start: string; end: string };
+};
+
 export type Quote = {
   listingId: string;
   checkIn: string;

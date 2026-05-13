@@ -98,12 +98,26 @@ var CloudStayClient = class {
     return res.listings[0] ?? null;
   }
   async getListingBySlug(slug, opts = { revalidate: 3600 }) {
-    const all = await this.listListingsFull({ limit: 500 }, opts);
-    return all.listings.find((l) => l.slug === slug) ?? null;
+    const slim = await this.listListings({ limit: 500 }, opts);
+    const match = slim.listings.find((l) => l.slug === slug);
+    if (!match) return null;
+    return this.getListingById(match._id ?? match.id, opts);
   }
   async getAvailableListingIds(startDate, endDate, opts = { revalidate: 60 }) {
     const query = new URLSearchParams({ startDate, endDate });
     return this.authedFetch(`/api/external/availability-ids?${query.toString()}`, opts);
+  }
+  /**
+   * Per-day availability for a single listing — date-keyed map of
+   * blocked/booked/min-nights/etc. Used by the booking calendar to mark
+   * dates the user can't pick. Public endpoint, no api-key required.
+   */
+  async getListingAvailability(listingId, startDate, endDate, opts = { revalidate: 300 }) {
+    const query = new URLSearchParams({ startDate, endDate });
+    return this.publicFetch(
+      `/api/listings/${listingId}/availability?${query.toString()}`,
+      opts
+    );
   }
   async quoteListing(listingId, body) {
     return this.publicFetch(`/api/listings/${listingId}/quote`, {

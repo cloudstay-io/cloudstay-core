@@ -93,6 +93,29 @@ type AvailabilityIdsResponse = {
     availableIds: string[];
     total: number;
 };
+/**
+ * Per-day availability state for a single listing — used by the booking
+ * calendar to disable dates that are already booked or owner-blocked.
+ */
+type AvailabilityDay = {
+    status: string;
+    price: number | null;
+    minNights: number;
+    maxNights: number | null;
+    isBlocked: boolean;
+    isBooked: boolean;
+    closedToArrival: boolean;
+    closedToDeparture: boolean;
+};
+type ListingAvailabilityResponse = {
+    /** Keyed by date string in YYYY-MM-DD format. */
+    availability: Record<string, AvailabilityDay>;
+    source: "channel" | "connection";
+    dateRange: {
+        start: string;
+        end: string;
+    };
+};
 type Quote = {
     listingId: string;
     checkIn: string;
@@ -187,6 +210,12 @@ declare class CloudStayClient {
     getListingById(listingId: string, opts?: FetchOpts): Promise<Listing | null>;
     getListingBySlug(slug: string, opts?: FetchOpts): Promise<Listing | null>;
     getAvailableListingIds(startDate: string, endDate: string, opts?: FetchOpts): Promise<AvailabilityIdsResponse>;
+    /**
+     * Per-day availability for a single listing — date-keyed map of
+     * blocked/booked/min-nights/etc. Used by the booking calendar to mark
+     * dates the user can't pick. Public endpoint, no api-key required.
+     */
+    getListingAvailability(listingId: string, startDate: string, endDate: string, opts?: FetchOpts): Promise<ListingAvailabilityResponse>;
     quoteListing(listingId: string, body: {
         checkIn: string;
         checkOut: string;
@@ -213,4 +242,4 @@ declare class CloudStayClient {
 }
 declare function createCloudStayClient(config: CloudStayClientConfig): CloudStayClient;
 
-export { type AddOn, type AvailabilityIdsResponse, type CityOption, CloudStayClient, type CloudStayClientConfig, type FetchOpts, type Listing, type ListingSummariesResponse, type ListingSummary, type ListingsResponse, type Quote, type SearchFilters, type SearchParams, type SortBy, createCloudStayClient };
+export { type AddOn, type AvailabilityDay, type AvailabilityIdsResponse, type CityOption, CloudStayClient, type CloudStayClientConfig, type FetchOpts, type Listing, type ListingAvailabilityResponse, type ListingSummariesResponse, type ListingSummary, type ListingsResponse, type Quote, type SearchFilters, type SearchParams, type SortBy, createCloudStayClient };

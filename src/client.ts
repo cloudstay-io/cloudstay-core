@@ -5,6 +5,7 @@ import type {
   CloudStayClientConfig,
   FetchOpts,
   Listing,
+  ListingAvailabilityResponse,
   ListingsResponse,
   ListingSummariesResponse,
   ListingSummary,
@@ -135,8 +136,15 @@ export class CloudStayClient {
     slug: string,
     opts: FetchOpts = { revalidate: 3600 },
   ): Promise<Listing | null> {
-    const all = await this.listListingsFull({ limit: 500 }, opts);
-    return all.listings.find((l) => l.slug === slug) ?? null;
+    // Two-call lookup: first hit the slim list (cached, ~17KB) to map slug→id,
+    // then fetch only that one listing's full payload via `?listingId=` (DB-
+    // filtered at the source). Both calls share Next.js fetch cache, so warm
+    // visits are instant and cold visits are ~2s instead of the ~5s spent
+    // pulling all 500 full listings just to find one.
+    const slim = await this.listListings({ limit: 500 }, opts);
+    const match = slim.listings.find((l) => l.slug === slug);
+    if (!match) return null;
+    return this.getListingById(match._id ?? match.id, opts);
   }
 
   async getAvailableListingIds(
@@ -146,6 +154,24 @@ export class CloudStayClient {
   ): Promise<AvailabilityIdsResponse> {
     const query = new URLSearchParams({ startDate, endDate });
     return this.authedFetch(`/api/external/availability-ids?${query.toString()}`, opts);
+  }
+
+  /**
+   * Per-day availability for a single listing — date-keyed map of
+   * blocked/booked/min-nights/etc. Used by the booking calendar to mark
+   * dates the user can't pick. Public endpoint, no api-key required.
+   */
+  async getListingAvailability(
+    listingId: string,
+    startDate: string,
+    endDate: string,
+    opts: FetchOpts = { revalidate: 300 },
+  ): Promise<ListingAvailabilityResponse> {
+    const query = new URLSearchParams({ startDate, endDate });
+    return this.publicFetch(
+      `/api/listings/${listingId}/availability?${query.toString()}`,
+      opts,
+    );
   }
 
   async quoteListing(
