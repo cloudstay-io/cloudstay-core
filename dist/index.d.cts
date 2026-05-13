@@ -132,6 +132,61 @@ type Quote = {
     available: boolean;
     quoteSource: string;
 };
+/**
+ * Booking submission payload — matches the schema accepted by
+ * `/api/host/pms-listings/[id]/book` and the inquiry endpoint. Skeleton
+ * forks extend this with payment fields (paymentMethodId, ccToken, etc.)
+ * when wiring in their PMS's payment provider.
+ */
+type BookingRequest = {
+    accountId?: string;
+    checkIn: string;
+    checkOut: string;
+    guests: number;
+    guestData: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        phone?: string;
+        message?: string;
+        adults?: number;
+        children?: number;
+        infants?: number;
+        pets?: number;
+        address?: {
+            line1?: string;
+            city?: string;
+            state?: string;
+            postalCode?: string;
+            country?: string;
+        };
+    };
+    marketingConsent?: boolean;
+    pricing?: {
+        nightlyRate: number;
+        subtotal: number;
+        cleaningFee?: number;
+        serviceFee?: number;
+        taxes?: number;
+        addOnsTotal?: number;
+        totalAmount: number;
+        currency?: string;
+    };
+    /** Stripe payment method id (when forks wire in card payments). */
+    paymentMethodId?: string;
+};
+type BookingResponse = {
+    /** CloudStay's internal booking id. */
+    directBookingId?: string;
+    /** Human-readable confirmation code shown to the guest. */
+    bookingRef?: string;
+    /** PMS-side id (Guesty/Hostaway/etc.) once synced. */
+    externalBookingId?: string;
+    provider?: string;
+    status?: string;
+    message?: string;
+    [key: string]: unknown;
+};
 type AddOn = {
     name: string;
     description?: string;
@@ -233,6 +288,21 @@ declare class CloudStayClient {
         addOns: AddOn[];
     }>;
     /**
+     * Submit a booking against the listing's PMS connection (HOST payment
+     * collection mode). For SANDBOX listings this creates a simulated booking
+     * with no payment; for LIVE listings the request must include a payment
+     * token (paymentMethodId for Stripe, etc.) that the fork's checkout has
+     * tokenized client-side.
+     *
+     * Returns the booking confirmation. Throws on validation/payment errors.
+     */
+    createBooking(listingId: string, body: BookingRequest): Promise<BookingResponse>;
+    /**
+     * Send an inquiry (no payment) — used as a fallback in SANDBOX or when the
+     * fork hasn't wired up payment yet. Forwards the guest's message to the host.
+     */
+    sendInquiry(listingId: string, body: BookingRequest): Promise<BookingResponse>;
+    /**
      * Returns sorted unique cities (with state/country context) across all
      * listings on this account — used for the destination dropdown. Reuses the
      * slim payload so this dedupes with `searchListings` via Next's fetch cache.
@@ -242,4 +312,4 @@ declare class CloudStayClient {
 }
 declare function createCloudStayClient(config: CloudStayClientConfig): CloudStayClient;
 
-export { type AddOn, type AvailabilityDay, type AvailabilityIdsResponse, type CityOption, CloudStayClient, type CloudStayClientConfig, type FetchOpts, type Listing, type ListingAvailabilityResponse, type ListingSummariesResponse, type ListingSummary, type ListingsResponse, type Quote, type SearchFilters, type SearchParams, type SortBy, createCloudStayClient };
+export { type AddOn, type AvailabilityDay, type AvailabilityIdsResponse, type BookingRequest, type BookingResponse, type CityOption, CloudStayClient, type CloudStayClientConfig, type FetchOpts, type Listing, type ListingAvailabilityResponse, type ListingSummariesResponse, type ListingSummary, type ListingsResponse, type Quote, type SearchFilters, type SearchParams, type SortBy, createCloudStayClient };

@@ -1,6 +1,8 @@
 import type {
   AddOn,
   AvailabilityIdsResponse,
+  BookingRequest,
+  BookingResponse,
   CityOption,
   CloudStayClientConfig,
   FetchOpts,
@@ -199,6 +201,41 @@ export class CloudStayClient {
     opts: FetchOpts = { revalidate: 3600 },
   ): Promise<{ listingId: string; addOns: AddOn[] }> {
     return this.publicFetch(`/api/listings/${listingId}/addons`, opts);
+  }
+
+  /**
+   * Submit a booking against the listing's PMS connection (HOST payment
+   * collection mode). For SANDBOX listings this creates a simulated booking
+   * with no payment; for LIVE listings the request must include a payment
+   * token (paymentMethodId for Stripe, etc.) that the fork's checkout has
+   * tokenized client-side.
+   *
+   * Returns the booking confirmation. Throws on validation/payment errors.
+   */
+  async createBooking(
+    listingId: string,
+    body: BookingRequest,
+  ): Promise<BookingResponse> {
+    return this.publicFetch(`/api/host/pms-listings/${listingId}/book`, {
+      method: "POST",
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  }
+
+  /**
+   * Send an inquiry (no payment) — used as a fallback in SANDBOX or when the
+   * fork hasn't wired up payment yet. Forwards the guest's message to the host.
+   */
+  async sendInquiry(
+    listingId: string,
+    body: BookingRequest,
+  ): Promise<BookingResponse> {
+    return this.publicFetch(`/api/listings/${listingId}/inquiry`, {
+      method: "POST",
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
   }
 
   /**

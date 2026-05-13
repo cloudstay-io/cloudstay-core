@@ -132,6 +132,33 @@ var CloudStayClient = class {
     return this.publicFetch(`/api/listings/${listingId}/addons`, opts);
   }
   /**
+   * Submit a booking against the listing's PMS connection (HOST payment
+   * collection mode). For SANDBOX listings this creates a simulated booking
+   * with no payment; for LIVE listings the request must include a payment
+   * token (paymentMethodId for Stripe, etc.) that the fork's checkout has
+   * tokenized client-side.
+   *
+   * Returns the booking confirmation. Throws on validation/payment errors.
+   */
+  async createBooking(listingId, body) {
+    return this.publicFetch(`/api/host/pms-listings/${listingId}/book`, {
+      method: "POST",
+      body: JSON.stringify(body),
+      cache: "no-store"
+    });
+  }
+  /**
+   * Send an inquiry (no payment) — used as a fallback in SANDBOX or when the
+   * fork hasn't wired up payment yet. Forwards the guest's message to the host.
+   */
+  async sendInquiry(listingId, body) {
+    return this.publicFetch(`/api/listings/${listingId}/inquiry`, {
+      method: "POST",
+      body: JSON.stringify(body),
+      cache: "no-store"
+    });
+  }
+  /**
    * Returns sorted unique cities (with state/country context) across all
    * listings on this account — used for the destination dropdown. Reuses the
    * slim payload so this dedupes with `searchListings` via Next's fetch cache.

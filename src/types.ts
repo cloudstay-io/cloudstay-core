@@ -130,6 +130,63 @@ export type Quote = {
   quoteSource: string;
 };
 
+/**
+ * Booking submission payload — matches the schema accepted by
+ * `/api/host/pms-listings/[id]/book` and the inquiry endpoint. Skeleton
+ * forks extend this with payment fields (paymentMethodId, ccToken, etc.)
+ * when wiring in their PMS's payment provider.
+ */
+export type BookingRequest = {
+  accountId?: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  guestData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    message?: string;
+    adults?: number;
+    children?: number;
+    infants?: number;
+    pets?: number;
+    address?: {
+      line1?: string;
+      city?: string;
+      state?: string;
+      postalCode?: string;
+      country?: string;
+    };
+  };
+  marketingConsent?: boolean;
+  pricing?: {
+    nightlyRate: number;
+    subtotal: number;
+    cleaningFee?: number;
+    serviceFee?: number;
+    taxes?: number;
+    addOnsTotal?: number;
+    totalAmount: number;
+    currency?: string;
+  };
+  /** Stripe payment method id (when forks wire in card payments). */
+  paymentMethodId?: string;
+};
+
+export type BookingResponse = {
+  /** CloudStay's internal booking id. */
+  directBookingId?: string;
+  /** Human-readable confirmation code shown to the guest. */
+  bookingRef?: string;
+  /** PMS-side id (Guesty/Hostaway/etc.) once synced. */
+  externalBookingId?: string;
+  provider?: string;
+  status?: string;
+  message?: string;
+  [key: string]: unknown;
+};
+
 export type AddOn = {
   name: string;
   description?: string;
