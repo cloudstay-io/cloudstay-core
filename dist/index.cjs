@@ -159,6 +159,21 @@ var CloudStayClient = class {
     });
   }
   /**
+   * Returns the listing's checkout configuration — payment provider,
+   * Stripe publishable key (when applicable), payment schedule options,
+   * cancellation policies. The skeleton's checkout calls this on mount to
+   * decide whether to render the Stripe `<CardElement>` or fall back to
+   * inquiry-only. Public endpoint, no api-key required.
+   *
+   * `accountId` is optional — pass it to surface account-level payment
+   * settings when the listing's connection is shared across accounts.
+   */
+  async getCheckoutConfig(listingId, accountId, opts = { revalidate: 60 }) {
+    const query = new URLSearchParams({ listingId });
+    if (accountId) query.set("accountId", accountId);
+    return this.publicFetch(`/api/checkout/config?${query.toString()}`, opts);
+  }
+  /**
    * Returns sorted unique cities (with state/country context) across all
    * listings on this account — used for the destination dropdown. Reuses the
    * slim payload so this dedupes with `searchListings` via Next's fetch cache.

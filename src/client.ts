@@ -3,6 +3,7 @@ import type {
   AvailabilityIdsResponse,
   BookingRequest,
   BookingResponse,
+  CheckoutConfig,
   CityOption,
   CloudStayClientConfig,
   FetchOpts,
@@ -236,6 +237,26 @@ export class CloudStayClient {
       body: JSON.stringify(body),
       cache: "no-store",
     });
+  }
+
+  /**
+   * Returns the listing's checkout configuration — payment provider,
+   * Stripe publishable key (when applicable), payment schedule options,
+   * cancellation policies. The skeleton's checkout calls this on mount to
+   * decide whether to render the Stripe `<CardElement>` or fall back to
+   * inquiry-only. Public endpoint, no api-key required.
+   *
+   * `accountId` is optional — pass it to surface account-level payment
+   * settings when the listing's connection is shared across accounts.
+   */
+  async getCheckoutConfig(
+    listingId: string,
+    accountId?: string,
+    opts: FetchOpts = { revalidate: 60 },
+  ): Promise<CheckoutConfig> {
+    const query = new URLSearchParams({ listingId });
+    if (accountId) query.set("accountId", accountId);
+    return this.publicFetch(`/api/checkout/config?${query.toString()}`, opts);
   }
 
   /**

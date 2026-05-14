@@ -187,6 +187,94 @@ type BookingResponse = {
     message?: string;
     [key: string]: unknown;
 };
+/**
+ * Checkout configuration for a single listing — surfaces the listing's
+ * payment provider, Stripe publishable key (when applicable), payment
+ * schedule options, and any cancellation policies that the checkout page
+ * needs to render. Returned by `/api/checkout/config?listingId=...`.
+ *
+ * The shape mirrors what CloudStay's own native checkout reads. Skeleton
+ * forks consume `payment.stripeEnabled` + `payment.stripePublishableKey`
+ * to decide whether to show the card form.
+ */
+type CheckoutConfig = {
+    listing: {
+        id: string;
+        name: string;
+        externalId?: string;
+        thumbnailUrl?: string;
+        currency?: string;
+        pricing?: {
+            basePricePerNight?: number;
+            currency?: string;
+            cleaningFee?: number;
+            extraGuestFee?: number;
+        };
+        cancellationPolicy?: string | {
+            name?: string;
+            description?: string;
+            fullRefundDays?: number;
+            refundablePercentage?: number;
+        };
+        cancellationPolicies?: Array<{
+            name?: string;
+            description?: string;
+            fullRefundDays?: number;
+            refundablePercentage?: number;
+        }>;
+        cancellationPolicyUrl?: string;
+    };
+    account: {
+        id: string;
+        name?: string;
+        slug?: string;
+    } | null;
+    connection: {
+        id: string;
+        provider?: string | null;
+        /** "INTERNAL" → CloudStay collects payment. "EXTERNAL" → redirect/iframe. */
+        checkoutType: "INTERNAL" | "EXTERNAL" | string;
+        externalCheckoutUrl?: string | null;
+        isChannel?: boolean;
+    };
+    payment: {
+        enabled: boolean;
+        /** "STRIPE" | "GUESTY" | "XENDIT" | "DOKU" | "BEDS24" | null */
+        solution: string | null;
+        /** "STAGING" | "LIVE" */
+        environment?: string;
+        stripeEnabled: boolean;
+        stripePublishableKey: string | null;
+        xenditEnabled?: boolean;
+        xenditPublishableKey?: string | null;
+        xenditUseTestMode?: boolean;
+        /** "HOST" | "ACCOUNT" — who collects payment. */
+        paymentCollectionMode?: string;
+        sandboxMode?: boolean;
+        accountSandboxMode?: boolean;
+        stripeUseTestMode?: boolean;
+    };
+    paymentOptions: Array<{
+        _id?: string;
+        name: string;
+        description?: string;
+        /** 0–100 — share of the total taken at booking. */
+        depositPercentage: number;
+        balanceDueDays: number;
+        depositBasedOnRentalFeeOnly?: boolean;
+        isDefault?: boolean;
+        installments?: Array<{
+            label?: string;
+            percentage?: number;
+            dueDaysBeforeCheckIn?: number;
+        }>;
+    }>;
+    accountCancellationPolicies?: Array<{
+        _id?: string;
+        name: string;
+        url?: string;
+    }>;
+};
 type AddOn = {
     name: string;
     description?: string;
@@ -303,6 +391,17 @@ declare class CloudStayClient {
      */
     sendInquiry(listingId: string, body: BookingRequest): Promise<BookingResponse>;
     /**
+     * Returns the listing's checkout configuration — payment provider,
+     * Stripe publishable key (when applicable), payment schedule options,
+     * cancellation policies. The skeleton's checkout calls this on mount to
+     * decide whether to render the Stripe `<CardElement>` or fall back to
+     * inquiry-only. Public endpoint, no api-key required.
+     *
+     * `accountId` is optional — pass it to surface account-level payment
+     * settings when the listing's connection is shared across accounts.
+     */
+    getCheckoutConfig(listingId: string, accountId?: string, opts?: FetchOpts): Promise<CheckoutConfig>;
+    /**
      * Returns sorted unique cities (with state/country context) across all
      * listings on this account — used for the destination dropdown. Reuses the
      * slim payload so this dedupes with `searchListings` via Next's fetch cache.
@@ -312,4 +411,4 @@ declare class CloudStayClient {
 }
 declare function createCloudStayClient(config: CloudStayClientConfig): CloudStayClient;
 
-export { type AddOn, type AvailabilityDay, type AvailabilityIdsResponse, type BookingRequest, type BookingResponse, type CityOption, CloudStayClient, type CloudStayClientConfig, type FetchOpts, type Listing, type ListingAvailabilityResponse, type ListingSummariesResponse, type ListingSummary, type ListingsResponse, type Quote, type SearchFilters, type SearchParams, type SortBy, createCloudStayClient };
+export { type AddOn, type AvailabilityDay, type AvailabilityIdsResponse, type BookingRequest, type BookingResponse, type CheckoutConfig, type CityOption, CloudStayClient, type CloudStayClientConfig, type FetchOpts, type Listing, type ListingAvailabilityResponse, type ListingSummariesResponse, type ListingSummary, type ListingsResponse, type Quote, type SearchFilters, type SearchParams, type SortBy, createCloudStayClient };

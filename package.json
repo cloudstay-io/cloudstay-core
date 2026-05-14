@@ -1,6 +1,6 @@
 {
   "name": "@cloudstay/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Typed CloudStay API client for Node and edge runtimes. Powers cloudstay-website and forks.",
   "license": "UNLICENSED",
   "private": false,

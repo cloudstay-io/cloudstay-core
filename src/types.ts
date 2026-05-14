@@ -187,6 +187,97 @@ export type BookingResponse = {
   [key: string]: unknown;
 };
 
+/**
+ * Checkout configuration for a single listing — surfaces the listing's
+ * payment provider, Stripe publishable key (when applicable), payment
+ * schedule options, and any cancellation policies that the checkout page
+ * needs to render. Returned by `/api/checkout/config?listingId=...`.
+ *
+ * The shape mirrors what CloudStay's own native checkout reads. Skeleton
+ * forks consume `payment.stripeEnabled` + `payment.stripePublishableKey`
+ * to decide whether to show the card form.
+ */
+export type CheckoutConfig = {
+  listing: {
+    id: string;
+    name: string;
+    externalId?: string;
+    thumbnailUrl?: string;
+    currency?: string;
+    pricing?: {
+      basePricePerNight?: number;
+      currency?: string;
+      cleaningFee?: number;
+      extraGuestFee?: number;
+    };
+    cancellationPolicy?:
+      | string
+      | {
+          name?: string;
+          description?: string;
+          fullRefundDays?: number;
+          refundablePercentage?: number;
+        };
+    cancellationPolicies?: Array<{
+      name?: string;
+      description?: string;
+      fullRefundDays?: number;
+      refundablePercentage?: number;
+    }>;
+    cancellationPolicyUrl?: string;
+  };
+  account: {
+    id: string;
+    name?: string;
+    slug?: string;
+  } | null;
+  connection: {
+    id: string;
+    provider?: string | null;
+    /** "INTERNAL" → CloudStay collects payment. "EXTERNAL" → redirect/iframe. */
+    checkoutType: "INTERNAL" | "EXTERNAL" | string;
+    externalCheckoutUrl?: string | null;
+    isChannel?: boolean;
+  };
+  payment: {
+    enabled: boolean;
+    /** "STRIPE" | "GUESTY" | "XENDIT" | "DOKU" | "BEDS24" | null */
+    solution: string | null;
+    /** "STAGING" | "LIVE" */
+    environment?: string;
+    stripeEnabled: boolean;
+    stripePublishableKey: string | null;
+    xenditEnabled?: boolean;
+    xenditPublishableKey?: string | null;
+    xenditUseTestMode?: boolean;
+    /** "HOST" | "ACCOUNT" — who collects payment. */
+    paymentCollectionMode?: string;
+    sandboxMode?: boolean;
+    accountSandboxMode?: boolean;
+    stripeUseTestMode?: boolean;
+  };
+  paymentOptions: Array<{
+    _id?: string;
+    name: string;
+    description?: string;
+    /** 0–100 — share of the total taken at booking. */
+    depositPercentage: number;
+    balanceDueDays: number;
+    depositBasedOnRentalFeeOnly?: boolean;
+    isDefault?: boolean;
+    installments?: Array<{
+      label?: string;
+      percentage?: number;
+      dueDaysBeforeCheckIn?: number;
+    }>;
+  }>;
+  accountCancellationPolicies?: Array<{
+    _id?: string;
+    name: string;
+    url?: string;
+  }>;
+};
+
 export type AddOn = {
   name: string;
   description?: string;
